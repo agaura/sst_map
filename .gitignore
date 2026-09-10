@@ -1,0 +1,4 @@
+node_modules/
+.DS_Store
+/mur_sst_cube_global.tif
+/config.local.json

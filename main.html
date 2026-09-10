@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sea Surface Thermal Observatory</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="app">
+    <header class="viewport-heading">
+      <div>
+        <div class="eyebrow"><span>Earth observation / MUR SST</span></div>
+        <h1><span class="title-word title-word--sea-surface">Sea Surface</span> <span class="title-word">Thermal</span> <span class="title-word">Observatory</span></h1>
+      </div>
+      <p class="description">Daily sea-surface temperature, traced through perceptual color.</p>
+      <div class="global-live"><canvas id="live-status-canvas" class="status-light" aria-hidden="true"></canvas><span id="playback-status">Archive / loading</span></div>
+    </header>
+    <section class="sidebar" aria-label="Field configuration">
+      <div class="configuration-controls">
+      <div class="section-label"><span>01</span> Field configuration</div>
+      <div class="toggle-row">
+        <label class="checkbox-toggle plain-toggle" aria-label="Enable HDR">
+          <span class="checkbox-box">
+            <input type="checkbox" id="hdr-toggle" checked />
+          </span>
+          <span>HDR x2</span>
+        </label>
+      </div>
+      <div class="colormap-control">
+        <label for="palette-slider">Palette hue</label>
+        <input type="range" id="palette-slider" min="0" max="6.283" step="0.001" value="5" />
+        <input type="number" id="palette-value" min="0" max="6.283" step="0.001" value="5.000" aria-label="Hue value" />
+      </div>
+      <div class="colormap-control colormap-control--toggleable" id="edge-contrast-control">
+        <label for="edge-contrast-slider">Edge Contrast</label>
+        <span class="checkbox-box colormap-checkbox">
+          <input type="checkbox" id="edge-contrast-toggle" checked aria-label="Enable edge contrast" />
+        </span>
+        <input type="range" id="edge-contrast-slider" min="0" max="1" step="0.001" value="0.333" />
+        <input type="number" id="edge-contrast-value" min="0" max="1" step="0.001" value="0.333" aria-label="Edge contrast value" />
+      </div>
+      </div>
+      <section class="cloud-panel" aria-label="OKLab color space view">
+        <div class="panel-caption"><span>Chromatic field</span><label class="checkbox-toggle"><span class="checkbox-box"><input type="checkbox" id="cloud-auto-rotate-toggle" checked /></span>Auto rotate</label></div>
+        <div class="cloud-stage"><canvas id="space-canvas" aria-label="Interactive OKLab color cloud; drag to rotate"></canvas></div>
+        <p class="interaction-note">Drag to rotate the color space</p>
+      </section>
+      <section class="strip-panel" aria-label="Temperature palette">
+        <div class="panel-caption">
+          <span>Thermal index</span>
+          <label class="checkbox-toggle strip-emphasis" aria-label="Enable palette emphasis">
+            <span class="checkbox-box"><input type="checkbox" id="emphasis-toggle" /></span>
+            <span>Highlight</span>
+          </label>
+        </div>
+        <canvas id="strip-canvas"></canvas>
+        <div class="strip-scale" aria-label="Temperature range from -2 to 36 degrees Celsius">
+          <span class="strip-emphasis-tick" id="emphasis-temperature-tick" hidden>
+            <span id="emphasis-temperature-value">17.00</span>
+          </span>
+          <span class="strip-tick" data-temperature="-2" style="--tick-position: 0%;"><span>-2</span></span>
+          <span class="strip-tick" data-temperature="0" style="--tick-position: 5.26%;"><span>0</span></span>
+          <span class="strip-tick" data-temperature="5" style="--tick-position: 18.42%;"><span>5</span></span>
+          <span class="strip-tick" data-temperature="10" style="--tick-position: 31.58%;"><span>10</span></span>
+          <span class="strip-tick" data-temperature="15" style="--tick-position: 44.74%;"><span>15</span></span>
+          <span class="strip-tick" data-temperature="20" style="--tick-position: 57.89%;"><span>20</span></span>
+          <span class="strip-tick" data-temperature="25" style="--tick-position: 71.05%;"><span>25</span></span>
+          <span class="strip-tick" data-temperature="30" style="--tick-position: 84.21%;"><span>30</span></span>
+          <span class="strip-tick" data-temperature="36" style="--tick-position: 100%;"><span>36 °C</span></span>
+        </div>
+        <p class="interaction-note thermal-note">Hover the color scale to inspect temperatures</p>
+      </section>
+    </section>
+    <section class="viewport" id="viewport">
+      <header class="viewport-header">
+        <div><span class="section-number">02</span> Global thermal field</div>
+        <div class="map-display-controls"><div class="coordinates">MUR · 0.3° GRID</div><label class="projection-toggle"><span class="projection-flat">Equirectangular</span><input type="checkbox" id="sphere-toggle" aria-label="Sphere view" /><span class="projection-sphere">Sphere</span></label></div>
+      </header>
+      <div class="map-stage">
+        <div class="canvas-wrapper" id="image-wrapper">
+          <canvas id="image-canvas" width="1204" height="603" aria-label="Sea surface temperature frame"></canvas>
+          <svg id="point-overlay" class="point-overlay" aria-hidden="true"></svg>
+          <div class="loading" id="loading" role="status">
+            <div class="loading-content">
+              <span>Synchronizing field data</span>
+              <progress id="loading-progress" max="1" aria-label="Current download progress"></progress>
+              <span id="loading-details">Connecting</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="instrument-deck">
+      <section class="analysis-panel" aria-label="Signal analysis">
+      <div class="section-label section-label--graph">
+        <span>03</span>
+        <span class="section-label-text">Signal analysis</span>
+        <label class="analysis-power" for="signal-analysis-toggle">
+          <input type="checkbox" id="signal-analysis-toggle" />
+          <span id="signal-analysis-state">Off</span>
+        </label>
+      </div>
+      <div class="signal-analysis-content" id="signal-analysis-content" hidden>
+        <div class="graph-mode-toggle" role="radiogroup" aria-label="Graph display mode">
+          <label class="checkbox-toggle" for="graph-temperature-toggle">
+            <span class="checkbox-box radio-box">
+              <input type="radio" id="graph-temperature-toggle" name="graph-mode" value="temperature" checked />
+            </span>
+            <span>Temperature</span>
+          </label>
+          <label class="checkbox-toggle" for="graph-fourier-toggle">
+            <span class="checkbox-box radio-box">
+              <input type="radio" id="graph-fourier-toggle" name="graph-mode" value="frequency" />
+            </span>
+            <span>Frequency</span>
+          </label>
+        </div>
+        <section class="graph-panel" aria-label="Point temperature graph">
+          <div id="temperature-graph" class="temperature-graph" aria-hidden="true">
+            <canvas id="graph-palette-canvas" class="graph-palette-canvas"></canvas>
+          </div>
+        </section>
+      </div>
+        <p class="analysis-empty">Hover over the map to inspect.<br>Click the map to pin a location.</p>
+      </section>
+      <div class="timeline-control">
+        <div class="section-label"><span>04</span> Temporal sequence <span class="timeline-hint">Hover to preview / click to select</span></div>
+        <div class="control-row">
+          <div class="playback-controls">
+            <button type="button" id="play-toggle" aria-label="Pause animation">Pause</button>
+            <label class="speed-control" for="fps-slider">
+              <span>FPS</span>
+              <input type="range" id="fps-slider" min="1" max="120" step="1" value="20" />
+              <output id="fps-value" for="fps-slider">20</output>
+            </label>
+            <div class="step-controls" id="step-controls" aria-label="Frame step controls" hidden>
+              <button type="button" id="frame-prev" aria-label="Previous frame">←</button>
+              <button type="button" id="frame-next" aria-label="Next frame">→</button>
+            </div>
+          </div>
+          <div class="frame-readout">
+            <time id="frame-date" datetime="2019-01-01">January 1, 2019</time>
+            <output id="frame-value">1 / --</output>
+          </div>
+        </div>
+        <div class="timeline-stage">
+          <svg id="frame-timeline" role="slider" tabindex="0" aria-label="Temperature frame timeline" aria-valuemin="1" aria-valuenow="1"></svg>
+        </div>
+        <div class="temperature-range" id="temperature-range" aria-live="polite"></div>
+      </div>
+      </div>
+    </section>
+  </main>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
