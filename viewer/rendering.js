@@ -1128,13 +1128,15 @@ export async function createRenderingContext(elements) {
     edgeContrast: elements.edgeContrastToggle?.checked ? Number.parseFloat(elements.edgeContrastSlider.value) : 0,
     hdr: elements.hdrToggle.checked ? 2 : 1,
     spherical: elements.sphereToggle.checked,
-    cloudAutoRotate: true,
+    cloudAutoRotate: !window.matchMedia('(prefers-reduced-motion: reduce)').matches,
     emphasis: elements.emphasisToggle.checked,
     selected: 0.5,
     time: 0,
   };
 
   const lifetime = new AbortController();
+  const autoRotateToggle = document.getElementById('cloud-auto-rotate-toggle');
+  if (autoRotateToggle) autoRotateToggle.checked = visuals.cloudAutoRotate;
   document.getElementById('cloud-auto-rotate-toggle')?.addEventListener('change', (event) => {
     visuals.cloudAutoRotate = event.target.checked;
   }, { signal: lifetime.signal });

@@ -89,6 +89,13 @@ export class TemperatureViewer {
     const timeline = this.elements.frameTimeline;
     const { fpsSlider, fpsValueLabel, framePrevButton, frameNextButton } = this.elements;
     this.listen(timeline, 'pointerdown', (event) => {
+      if (!this.state.initialized) return;
+      if (event.pointerType === 'touch' || event.pointerType === 'pen') {
+        event.preventDefault();
+        timeline.setPointerCapture(event.pointerId);
+        this.pause();
+        this.selectFrame(this.frameIndexFromPointer(event));
+      }
       if (event.pointerType === 'mouse') {
         event.preventDefault();
       }
@@ -97,8 +104,18 @@ export class TemperatureViewer {
       this.state.isTimelineHovered = true;
     });
     this.listen(timeline, 'pointermove', (event) => {
+      if (timeline.hasPointerCapture(event.pointerId)) {
+        this.selectFrame(this.frameIndexFromPointer(event));
+        return;
+      }
       this.previewFrame(this.frameIndexFromPointer(event));
     });
+    const releaseTimeline = event => {
+      if (timeline.hasPointerCapture(event.pointerId)) timeline.releasePointerCapture(event.pointerId);
+      this.state.isTimelineHovered = false;
+    };
+    this.listen(timeline, 'pointerup', releaseTimeline);
+    this.listen(timeline, 'pointercancel', releaseTimeline);
     this.listen(timeline, 'pointerleave', () => {
       this.state.isTimelineHovered = false;
       if (!this.state.isPlaying) {
@@ -242,6 +259,7 @@ export class TemperatureViewer {
         this.elements.signalAnalysisToggle.disabled = spherical;
       }
       this.rendering.setSphericalViewEnabled(spherical);
+      this.elements.imageCanvas.classList.toggle('is-spherical', spherical);
       if (!spherical) {
         this.restoreSignalAnalysisAfterSphere();
       }
@@ -649,12 +667,14 @@ export class TemperatureViewer {
         createDefaultPoint: signalAnalysisToggle.checked,
       });
     });
-    this.listen(imageCanvas, 'pointerenter', () => {
+    this.listen(imageCanvas, 'pointerenter', (event) => {
+      if (event.pointerType === 'touch') return;
       if (this.state.initialized && !this.elements.sphereToggle?.checked && !this.signalAnalysisEnabled) {
         this.setSignalAnalysisEnabled(true);
       }
     });
     this.listen(imageCanvas, 'pointermove', (event) => {
+      if (event.pointerType === 'touch') return;
       if (!this.state.initialized || this.elements.sphereToggle?.checked) {
         return;
       }
@@ -906,6 +926,15 @@ export class TemperatureViewer {
   }
 
   updateCurrentGraphPoint() {
+    const readout = document.getElementById('selected-location');
+    if (readout) {
+      const point = this.state.pinnedPoint;
+      readout.hidden = !point;
+      if (point) {
+        const value = this.pinnedSeries?.[this.state.displayFrameIndex]?.value;
+        readout.textContent = `${formatLatLon(pixelToLatLon(point, this.state.width, this.state.height))} · ${Number.isFinite(value) ? `${formatTemperature(value)} °C` : 'No temperature data'}`;
+      }
+    }
     if (!this.temperatureGraph) {
       return;
     }

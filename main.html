@@ -1,6 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-BBWS173BMQ"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-BBWS173BMQ');
+  </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sea Surface Thermal Observatory</title>
@@ -121,7 +128,7 @@
           </div>
         </section>
       </div>
-        <p class="analysis-empty">Hover over the map to inspect.<br>Click the map to pin a location.</p>
+        <p class="analysis-empty"><span class="mouse-instruction">Hover over the map to inspect.<br>Click the map to pin a location.</span><span class="touch-instruction">Tap the flat map to pin a location.</span></p>
       </section>
       <div class="timeline-control">
         <div class="section-label"><span>04</span> Temporal sequence <span class="timeline-hint">Hover to preview / click to select</span></div>
@@ -146,7 +153,10 @@
         <div class="timeline-stage">
           <svg id="frame-timeline" role="slider" tabindex="0" aria-label="Temperature frame timeline" aria-valuemin="1" aria-valuenow="1"></svg>
         </div>
-        <div class="temperature-range" id="temperature-range" aria-live="polite"></div>
+        <div class="timeline-summary">
+          <div class="temperature-range" id="temperature-range" aria-live="polite"></div>
+          <output id="selected-location" class="selected-location" aria-label="Pinned location temperature" hidden></output>
+        </div>
       </div>
       </div>
     </section>

@@ -56,7 +56,12 @@ button, label, input[type="range"] { -webkit-tap-highlight-color: transparent; }
 .colormap-control { display: grid; grid-template-columns: 82px minmax(0, 1fr) 57px; align-items: center; gap: 8px; min-width: 0; font-size: 10px; }
 .colormap-control--toggleable { grid-template-columns: 82px 13px minmax(0, 1fr) 57px; }
 .colormap-control > label { color: var(--muted); }
-.colormap-control input[type="number"] { width: 100%; height: 24px; min-width: 0; border: 0; border-bottom: 1px solid var(--border); border-radius: 0; padding: 3px 1px; background: transparent; text-align: right; font: 10px var(--mono); color: var(--fg); }
+.colormap-control input[type="number"] { width: 100%; height: 24px; min-width: 0; border: 0; border-bottom: 1px solid var(--border); border-radius: 0; padding: 3px 4px; background: var(--raised); text-align: right; font: 10px var(--mono); color: var(--fg); }
+.colormap-control input[type="number"]::-webkit-inner-spin-button {
+  opacity: 1;
+  margin-left: 4px;
+  cursor: pointer;
+}
 .colormap-control.is-effect-disabled input[type="range"], .colormap-control.is-effect-disabled input[type="number"] { opacity: .4; }
 input[type="range"] { appearance: none; background: transparent; border: 0; border-radius: 0; width: 100%; min-width: 0; height: 18px; accent-color: var(--accent); cursor: pointer; }
 input[type="range"]::-webkit-slider-runnable-track { height: 2px; background: var(--dim); }
@@ -88,7 +93,11 @@ input[type="range"]::-moz-range-thumb { width: 8px; height: 14px; border: 0; bor
 .coordinates span { margin-left: 12px; color: var(--dim); }
 .map-stage { min-height: 0; min-width: 0; container-type: size; display: grid; place-items: center; }
 .canvas-wrapper { position: relative; width: min(100%, 199.6683cqh); aspect-ratio: var(--image-width, 1204) / var(--image-height, 603); overflow: hidden; border: 1px solid var(--border); background: #000; }
-#image-canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+#image-canvas { display: block; width: 100%; height: 100%; touch-action: pan-y pinch-zoom; }
+#image-canvas.is-spherical { touch-action: none; }
+.touch-instruction { display: none; }
+.selected-location { color: var(--fg); font: 10px/1.5 var(--mono); overflow-wrap: anywhere; }
+.selected-location[hidden] { display: none; }
 .loading { position: absolute; inset: 0; display: grid; place-items: center; background: var(--bg); color: var(--muted); padding: 16px; text-align: center; font: 11px/1.6 var(--mono); }
 .instrument-deck { display: grid; grid-template-columns: clamp(220px, 27%, 300px) minmax(0, 1fr); min-width: 0; min-height: 0; position: relative; gap: 18px; padding-top: 14px; }
 .instrument-deck::before { content: ""; position: absolute; top: 0; left: -18px; right: -18px; border-top: 1px solid var(--border); pointer-events: none; }
@@ -472,4 +481,42 @@ input[type="range"]::-moz-range-thumb { width: 8px; height: 14px; border: 0; bor
   .app { grid-template-rows: 66px auto 240px auto; }
   .map-stage { container-type: normal; padding-top: 26px; }
   .canvas-wrapper { width: 100%; }
+}
+
+@media (pointer: coarse) {
+  .mouse-instruction { display: none; }
+  .touch-instruction { display: inline; }
+  .checkbox-toggle, .analysis-power, .projection-toggle { min-height: 44px; }
+  .colormap-control input[type="number"] { min-height: 44px; font-size: 16px; }
+  input[type="range"] { min-height: 44px; }
+  #play-toggle, .step-controls button { min-width: 44px; height: 44px; }
+  .step-controls[hidden] { display: flex; visibility: hidden; }
+  #strip-canvas { height: 44px; touch-action: pan-y; }
+  .temperature-graph { touch-action: pan-y; }
+}
+
+@media (pointer: coarse) and (max-width: 760px) {
+  .colormap-control { grid-template-columns: minmax(0, 1fr) 76px; gap: 0 5px; }
+  .colormap-control > label { grid-column: 1; grid-row: 1; }
+  .colormap-control input[type="range"] { grid-column: 1; grid-row: 2; }
+  .colormap-control input[type="number"] { grid-column: 2; grid-row: 2; }
+  .colormap-checkbox { grid-column: 2; grid-row: 1; justify-self: end; }
+  html, body { height: auto; overflow: auto; }
+  .app { height: auto; min-height: 100dvh; overflow: visible; grid-template-rows: auto auto auto auto; }
+  .viewport-heading { min-height: 90px; }
+  .sidebar { grid-template-rows: auto auto; }
+  .cloud-stage { min-height: 180px; }
+  .map-stage { container-type: normal; padding-top: 48px; }
+  .canvas-wrapper { width: 100%; }
+  .instrument-deck { grid-template-columns: minmax(0, 1fr); grid-template-rows: 270px auto; }
+  .timeline-control { grid-template-rows: auto auto 80px auto; border-left: 0; padding: 12px 0 0; }
+  .analysis-panel { grid-template-rows: 44px minmax(0, 1fr); }
+  .signal-analysis-content { grid-template-rows: 44px minmax(0, 1fr); }
+  .graph-mode-toggle { position: static; width: auto; flex-direction: row; }
+  .graph-panel { width: calc(100% + 10px); }
+  .control-row, .playback-controls { flex-wrap: wrap; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0s !important; }
 }
