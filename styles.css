@@ -38,6 +38,12 @@ button, label, input[type="range"] { -webkit-tap-highlight-color: transparent; }
 .title-word--sea-surface { font-weight: 750; }
 .title-word:not(.title-word--sea-surface) { color: var(--accent); }
 .description { color: var(--muted); font-size: 11px; line-height: 1.55; max-width: 36ch; }
+.description a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+.description a:hover, .description a:focus-visible { color: var(--accent-strong); }
+@media (min-width: 1101px) {
+  .app { grid-template-rows: minmax(112px, auto) minmax(0, 1fr); }
+  .description { max-width: none; font-size: 10px; line-height: 1.4; }
+}
 .global-live { display: flex; gap: 7px; align-items: center; align-self: start; padding-top: 3px; white-space: nowrap; color: var(--muted); font: 8px var(--mono); letter-spacing: .04em; text-transform: uppercase; }
 .status-light { display: block; width: 6px; height: 6px; }
 .sidebar { grid-column: 1; grid-row: 2; display: grid; grid-template-rows: auto minmax(0, 1fr) auto; min-width: 0; min-height: 0; padding: 14px 18px; border-right: 1px solid var(--border); gap: 14px; }
