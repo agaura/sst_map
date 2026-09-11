@@ -16,12 +16,11 @@
 <body>
   <main class="app">
     <header class="viewport-heading">
+      <div class="eyebrow"><span>Earth observation / MUR SST</span><span class="global-live"><canvas id="live-status-canvas" class="status-light" aria-hidden="true"></canvas><span id="playback-status">Loading</span></span></div>
       <div>
-        <div class="eyebrow"><span>Earth observation / MUR SST</span></div>
         <h1><span class="title-word title-word--sea-surface">Sea Surface</span> <span class="title-word">Thermal</span> <span class="title-word">Observatory</span></h1>
       </div>
       <p class="description">Daily sea-surface temperature, traced through perceptual color. Data from <a href="https://podaac.jpl.nasa.gov/dataset/MUR-JPL-L4-GLOB-v4.1" target="_blank" rel="noopener noreferrer">Multi-scale Ultra-high Resolution (MUR) Sea Surface Temperature (MEaSUREs-MUR)</a>.</p>
-      <div class="global-live"><canvas id="live-status-canvas" class="status-light" aria-hidden="true"></canvas><span id="playback-status">Archive / loading</span></div>
     </header>
     <section class="sidebar" aria-label="Field configuration">
       <div class="configuration-controls">

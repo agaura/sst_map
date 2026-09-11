@@ -58,7 +58,7 @@ export class TemperatureViewer {
       if (this.destroyed) return;
       console.error('Failed to initialize temperature viewer', error);
       this.rendering?.setLiveStatusColor(4, 0, 0);
-      document.getElementById('playback-status').textContent = 'Archive / unavailable';
+      document.getElementById('playback-status').textContent = 'Unavailable';
       showLoadingError(this.elements, error.message);
     }
   }
@@ -432,7 +432,7 @@ export class TemperatureViewer {
   updatePlaybackControl() {
     const isPlaying = this.state.isPlaying;
     this.elements.playToggle.textContent = isPlaying ? 'Pause' : 'Play';
-    document.getElementById('playback-status').textContent = isPlaying ? 'Archive / playing' : 'Archive / paused';
+    document.getElementById('playback-status').textContent = isPlaying ? 'Playing' : 'Paused';
     this.elements.playToggle.setAttribute('aria-label', isPlaying ? 'Pause animation' : 'Play animation');
     if (this.elements.stepControls) {
       this.elements.stepControls.hidden = isPlaying;
