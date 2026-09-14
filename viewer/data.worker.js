@@ -1,8 +1,18 @@
 import { GeoTIFF } from '../vendor/geotiff.js';
 import { createNoStoreSource } from './noStoreClient.js';
 import { prepareFrame } from './frameData.js';
+import { loadCompressedArchive } from './compressedData.js';
 self.onmessage = async ({ data: { url } }) => {
   try {
+    if (new URL(url).pathname.endsWith('.sstz')) {
+      const { init, decompress } = await import('../vendor/zstd.js');
+      const wasm = await fetch(new URL('../vendor/zstd.wasm', import.meta.url), { cache: 'no-store' });
+      if (!wasm.ok) throw new Error('Unable to load Zstd decoder.');
+      await init(await wasm.arrayBuffer());
+      const value = await loadCompressedArchive(url, decompress, progress => self.postMessage({ progress }));
+      self.postMessage({ value }, [...new Set(value.frames.map(frame => frame.data.buffer))]);
+      return;
+    }
     let lastReport = 0;
     const tiff = await GeoTIFF.fromSource(createNoStoreSource(url, progress => {
       const now = performance.now();

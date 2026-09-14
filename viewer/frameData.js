@@ -15,15 +15,26 @@ export function prepareFrame(raster, noData) {
 // Deliberately synchronous. Scrubbing and point inspection must never wait for
 // the network, a worker message, decompression, or another playback frame.
 export function createFrameStore({ width, height, frames }) {
+  let uploadData;
   return {
     width, height, frameCount: frames.length,
-    readFrame(index) { return frames[index]; },
+    // Reused data is borrowed until the next reusable read; GPU upload is synchronous.
+    readFrame(index, { reuse = false } = {}) {
+      const frame = frames[index];
+      if (!(frame?.data instanceof Uint8Array)) return frame;
+      if (reuse && uploadData?.length !== frame.data.length) uploadData = new Float32Array(frame.data.length);
+      const data = reuse ? uploadData : new Float32Array(frame.data.length);
+      for (let i = 0; i < data.length; i++) data[i] = decodeTemperature(frame.data[i]);
+      return { ...frame, data };
+    },
     readPointSeries(x, y) {
       x = Math.min(width - 1, Math.max(0, Math.round(x)));
       y = Math.min(height - 1, Math.max(0, Math.round(y)));
       const pixel = y * width + x;
-      return frames.map((frame, index) => ({ index, value: frame.data[pixel] }));
+      return frames.map((frame, index) => ({ index, value: frame.data instanceof Uint8Array ? decodeTemperature(frame.data[pixel]) : frame.data[pixel] }));
     },
-    destroy() { frames.length = 0; },
+    destroy() { frames.length = 0; uploadData = undefined; },
   };
 }
+
+function decodeTemperature(code) { return code === 0 ? NaN : -2 + (code - 1) * 38 / 254; }

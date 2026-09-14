@@ -340,7 +340,7 @@ export class TemperatureViewer {
       return;
     }
     const requestId = ++this.state.pendingFrameRequestId;
-    const frame = this.state.cube.readFrame(index);
+    const frame = this.state.cube.readFrame(index, { reuse: true });
     if (!frame || requestId !== this.state.pendingFrameRequestId) {
       return;
     }
