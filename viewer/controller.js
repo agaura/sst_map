@@ -88,7 +88,7 @@ export class TemperatureViewer {
   attachEventListeners() {
     const timeline = this.elements.frameTimeline;
     const { fpsSlider, fpsValueLabel, framePrevButton, frameNextButton } = this.elements;
-    this.listen(timeline, 'pointerdown', (event) => {
+    this.listen(timeline.closest('.timeline-stage') || timeline, 'pointerdown', (event) => {
       if (!this.state.initialized) return;
       if (event.pointerType === 'touch' || event.pointerType === 'pen') {
         event.preventDefault();
