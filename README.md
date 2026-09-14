@@ -2,6 +2,8 @@
 
 An interactive WebGPU map of daily sea-surface temperatures for 2019. Explore a flat map or globe, inspect temperature histories and frequency spectra, and adjust palette hue, edge contrast, and HDR highlights. HDR is optional; WebGPU and a secure connection are required.
 
+Depending on your browser and operating-system version, you may need to enable WebGPU in the browser's experimental settings or feature flags, then restart the browser. Update your browser first; flag names and availability vary by version. Safari has exposed WebGPU through its Feature Flags settings (see [WebKit's instructions for older Safari Technology Preview versions](https://webkit.org/blog/14879/webgpu-now-available-for-testing-in-safari-technology-preview/)). Experimental flags do not guarantee support on your device and do not remove the HTTPS/localhost requirement. HDR is optional and is not required to view the map.
+
 Run with Node.js 20 or newer:
 
 ```sh
