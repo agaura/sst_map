@@ -667,6 +667,39 @@ export class TemperatureViewer {
         createDefaultPoint: signalAnalysisToggle.checked,
       });
     });
+    let analysisPointer = null;
+    const pinFromPointer = (event) => {
+      if (!this.state.initialized || this.elements.sphereToggle?.checked) return;
+      const point = this.pixelFromCanvasPointer(event);
+      if (!point || samePoint(point, this.state.pinnedPoint)) return;
+      this.setSignalAnalysisEnabled(true);
+      this.state.pinnedPoint = point;
+      this.pinnedSeries = null;
+      this.updatePointOverlay();
+      this.updatePinnedSeries(point).catch((error) => {
+        console.error('Unable to pin temperature graph', error);
+      });
+    };
+    this.listen(imageCanvas, 'pointerdown', (event) => {
+      if (event.pointerType === 'mouse' || !event.isPrimary || !this.state.initialized || this.elements.sphereToggle?.checked) return;
+      analysisPointer = event.pointerId;
+      imageCanvas.setPointerCapture(event.pointerId);
+      pinFromPointer(event);
+    });
+    this.listen(imageCanvas, 'pointermove', (event) => {
+      if (event.pointerId === analysisPointer) pinFromPointer(event);
+    });
+    const releaseAnalysisPointer = (event) => {
+      if (event.pointerId !== analysisPointer) return;
+      analysisPointer = null;
+      if (imageCanvas.hasPointerCapture(event.pointerId)) imageCanvas.releasePointerCapture(event.pointerId);
+    };
+    this.listen(imageCanvas, 'pointerup', releaseAnalysisPointer);
+    this.listen(imageCanvas, 'pointercancel', releaseAnalysisPointer);
+    this.listen(imageCanvas, 'lostpointercapture', releaseAnalysisPointer);
+    this.listen(imageCanvas, 'contextmenu', event => {
+      if (event.pointerType === 'touch' || matchMedia('(pointer: coarse)').matches) event.preventDefault();
+    });
     this.listen(imageCanvas, 'pointerenter', (event) => {
       if (event.pointerType === 'touch') return;
       if (this.state.initialized && !this.elements.sphereToggle?.checked && !this.signalAnalysisEnabled) {
@@ -710,6 +743,7 @@ export class TemperatureViewer {
       }
     });
     this.listen(imageCanvas, 'click', (event) => {
+      if (event.pointerType === 'touch' || event.pointerType === 'pen') return;
       if (!this.state.initialized || this.elements.sphereToggle?.checked) {
         return;
       }
