@@ -1111,7 +1111,9 @@ const DISPLAY_RANGE_MAX = 36;
 
 export async function createRenderingContext(elements) {
   if (!navigator.gpu) {
-    throw new Error('WebGPU is not supported in this browser.');
+    throw new Error(window.isSecureContext
+      ? 'WebGPU is unavailable. Update your browser and, if available, enable WebGPU in its experimental settings or feature flags, then restart it. A compatible browser, operating system, and GPU are required; flags alone may not enable support.'
+      : 'WebGPU requires a secure connection. Open this page over HTTPS or localhost.');
   }
   const adapter = await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' });
   if (!adapter) {

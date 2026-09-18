@@ -6,6 +6,8 @@ Depending on your browser and operating-system version, you may need to enable W
 
 Run with Node.js 20 or newer:
 
+The HDR and Custom (palette hue) controls are developer-only UI. Enable them with `"developerControls": true` in ignored `config.local.json`; without that explicit option they remain hidden. This does not disable HDR rendering or change the default palette in production, and is not an access-control mechanism. Do not publish the local configuration.
+
 ```sh
 npm start
 ```

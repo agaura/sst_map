@@ -16,6 +16,7 @@
   font-synthesis: none;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
+[data-developer-control][hidden] { display: none !important; }
 html, body { width: 100%; height: 100%; overflow: hidden; }
 body { background: var(--bg); color: var(--fg); }
 button, input { font: inherit; }

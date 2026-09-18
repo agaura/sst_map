@@ -5,7 +5,7 @@ import { createInitialState } from './state.js';
 import { createRenderingContext } from './rendering.js';
 import { hideLoadingOverlay, showLoadingError } from './dom.js';
 import { loadTemperatureCube } from './dataLoaders.js';
-import { resolveDatasetUrl } from './datasetConfig.js';
+import { resolveDatasetUrl, readLocalConfig } from './datasetConfig.js';
 
 const DEFAULT_PLAYBACK_FPS = 20;
 const DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
@@ -48,6 +48,11 @@ export class TemperatureViewer {
 
   async init() {
     try {
+      this.localConfig = await readLocalConfig({ signal: this.lifetime.signal });
+      if (this.destroyed) return;
+      document.querySelectorAll('[data-developer-control]').forEach(control => {
+        control.hidden = this.localConfig.developerControls !== true;
+      });
       this.rendering = await createRenderingContext(this.elements);
       if (this.destroyed) { this.rendering.destroy(); return; }
       await this.loadInitialData();
@@ -311,7 +316,7 @@ export class TemperatureViewer {
     const timer = setInterval(updateProgress, 1000);
     let cube;
     try {
-      const datasetUrl = await resolveDatasetUrl({ signal: this.lifetime.signal });
+      const datasetUrl = await resolveDatasetUrl({ signal: this.lifetime.signal, config: this.localConfig });
       cube = await loadTemperatureCube(datasetUrl, {
         signal: this.lifetime.signal,
         onProgress: value => { progress = value; updateProgress(); },

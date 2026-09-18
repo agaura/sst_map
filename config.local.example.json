@@ -1,3 +1,4 @@
 {
-  "preferLocalDataset": true
+  "preferLocalDataset": true,
+  "developerControls": true
 }
