@@ -1,5 +1,5 @@
-// Preserve the original DFT convention, including mean-filled missing values and
-// doubled non-DC bins. Results are computed on demand and never cached.
+// One-sided peak amplitudes, with mean-filled missing values.
+// DC and the even-length Nyquist bin must not be doubled.
 export function fourierAmplitudes(values) {
   const finite = Array.from(values).filter(Number.isFinite);
   if (!finite.length) return new Float64Array(0);
@@ -13,7 +13,7 @@ export function fourierAmplitudes(values) {
       real += filled[index] * Math.cos(angle);
       imaginary += filled[index] * Math.sin(angle);
     }
-    result[frequency] = Math.hypot(real, imaginary) * (frequency === 0 ? 1 / n : 2 / n);
+    result[frequency] = Math.hypot(real, imaginary) * (frequency === 0 || (n % 2 === 0 && frequency === n / 2) ? 1 / n : 2 / n);
   }
   return result;
 }

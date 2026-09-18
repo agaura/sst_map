@@ -506,6 +506,8 @@ export class TemperatureViewer {
     const chart = d3.select(temperatureGraph);
     chart.classed('is-ready', false);
     chart.classed('is-fourier', this.fourierMode);
+    const readout = document.getElementById('fft-readout');
+    if (readout) { readout.hidden = !this.fourierMode; readout.textContent = ''; }
     chart.selectAll('svg').remove();
     const svg = chart.append('svg')
       .attr('class', 'temperature-graph-svg')
@@ -563,6 +565,8 @@ export class TemperatureViewer {
       .attr('class', 'temperature-current-mask-point')
       .attr('r', 0)
       .attr('fill', 'black');
+    const pinnedMaskPoint = mask.append('rect').attr('width', 8).attr('height', 8)
+      .attr('fill', 'black').attr('display', 'none');
 
     revealLayer.append('rect')
       .attr('class', 'temperature-graph-cover')
@@ -606,12 +610,15 @@ export class TemperatureViewer {
       .attr('transform', `translate(${graphMargin.left},0)`)
       .call(d3.axisLeft(yScale)
         .tickValues(yTicks)
-        .tickFormat((value) => this.fourierMode ? formatAmplitudeTick(value) : `${value}`));
+        .tickFormat((value) => this.fourierMode ? `${formatAmplitudeTick(value)}°` : `${value}`));
     const graphTitleLabel = overlayLayer.append('text')
       .attr('class', 'temperature-graph-label')
       .attr('x', graphMargin.left)
       .attr('y', Math.max(6, graphMargin.top - 8))
       .text(this.fourierMode ? 'Fourier at --' : 'Temperature at --');
+    const titleMarker = overlayLayer.append('circle').attr('class', 'temperature-current-point')
+      .attr('cx', graphMargin.left - 10).attr('cy', Math.max(6, graphMargin.top - 8) - 3).attr('r', 3)
+      .attr('display', this.fourierMode ? 'none' : null);
     const currentValueLabel = overlayLayer.append('text')
       .attr('class', 'temperature-graph-current-value')
       .attr('x', graphWidth - graphMargin.right)
@@ -623,6 +630,8 @@ export class TemperatureViewer {
     const pinnedBars = overlayLayer.append('g').attr('class', 'temperature-bars temperature-bars--pinned');
     const hoverBars = overlayLayer.append('g').attr('class', 'temperature-bars temperature-bars--hover');
     const currentPoint = overlayLayer.append('circle').attr('class', 'temperature-current-point').attr('r', 0);
+    const pinnedCurrentPoint = overlayLayer.append('rect')
+      .attr('class', 'temperature-current-point').attr('width', 8).attr('height', 8).attr('display', 'none');
 
     d3.select(pointOverlay)
       .attr('viewBox', `0 0 ${this.state.width} ${this.state.height}`)
@@ -646,7 +655,10 @@ export class TemperatureViewer {
       pinnedMaskPath,
       currentMaskPoint,
       currentPoint,
+      pinnedCurrentPoint,
+      pinnedMaskPoint,
       graphTitleLabel,
+      titleMarker,
       currentValueLabel,
       hoverCircle,
       pinnedCircle,
@@ -739,6 +751,7 @@ export class TemperatureViewer {
         this.temperatureGraph.hoverPath.attr('d', null);
         this.temperatureGraph.hoverMaskPath.attr('d', null);
         this.temperatureGraph.hoverBars.selectAll('line').remove();
+        if (this.fourierMode) this.highlightFourierBin(null);
       }
       this.hoverSeries = null;
       this.updateCurrentGraphPoint();
@@ -775,6 +788,7 @@ export class TemperatureViewer {
     this.listen(graphFourierToggle, 'change', updateGraphMode);
     this.listen(temperatureGraph, 'pointermove', (event) => {
       if (this.fourierMode) {
+        this.highlightFourierBin(event);
         return;
       }
       if (event.target.closest?.('text') || window.getSelection()?.type === 'Range') {
@@ -790,6 +804,7 @@ export class TemperatureViewer {
     });
     this.listen(temperatureGraph, 'pointerleave', () => {
       if (this.fourierMode) {
+        this.highlightFourierBin(null);
         return;
       }
       this.elements.emphasisToggle.checked = this.paletteEmphasisBase;
@@ -803,6 +818,7 @@ export class TemperatureViewer {
     });
     this.listen(temperatureGraph, 'click', (event) => {
       if (this.fourierMode) {
+        this.highlightFourierBin(event, true);
         return;
       }
       if (event.target.closest?.('text') || window.getSelection()?.type === 'Range') {
@@ -930,6 +946,39 @@ export class TemperatureViewer {
     this.temperatureGraph.chart.classed('is-visible', true);
   }
 
+  highlightFourierBin(event, pin = false) {
+    const graph = this.temperatureGraph;
+    if (!graph) return;
+    const bars = graph.chart.selectAll('.temperature-bars line');
+    bars.classed('is-highlighted', false);
+    const readout = document.getElementById('fft-readout');
+    if (!readout) return;
+    readout.textContent = '';
+    let bin = this.pinnedFourierBin;
+    let y = graph.yScale.range()[0];
+    const [left, right] = graph.xScale.range();
+    const [bottom, top] = graph.yScale.range();
+    if (event) {
+      const point = d3.pointer(event, graph.chart.select('svg').node());
+      const x = point[0]; y = point[1];
+      if (x < left || x > right || y < top || y > bottom) return this.highlightFourierBin(null);
+      bin = clamp(Math.round(graph.xScale.invert(x)), 1, Math.floor(this.state.frameCount / 2));
+    }
+    if (!Number.isInteger(bin)) return;
+    // Reuse displayed bar data rather than recomputing the DFT on every move.
+    const candidates = bars.nodes().filter(node => node.__data__.index === bin);
+    const selected = (!event && candidates.find(node => node.parentNode.classList.contains(this.pinnedFourierSeries)))
+      || candidates.sort((a, b) => Math.abs(Number(a.getAttribute('y2')) - y) - Math.abs(Number(b.getAttribute('y2')) - y))[0];
+    if (!selected) return;
+    if (pin) {
+      this.pinnedFourierBin = bin;
+      this.pinnedFourierSeries = selected.parentNode.classList.contains('temperature-bars--pinned') ? 'temperature-bars--pinned' : 'temperature-bars--hover';
+    }
+    d3.select(selected).classed('is-highlighted', true).raise();
+    const cycles = bin * 365 / this.state.frameCount;
+    readout.textContent = `±${selected.__data__.value.toFixed(2)} °C variation · ${Number(cycles.toFixed(2))} cycles/year (${(this.state.frameCount / bin).toFixed(1)} days)`;
+  }
+
   graphDisplaySeries(rawSeries = this.hoverSeries || this.pinnedSeries) {
     if (!rawSeries) {
       return [];
@@ -954,6 +1003,7 @@ export class TemperatureViewer {
       this.temperatureGraph.pinnedMaskPath.attr('d', null);
       renderFourierBars(this.temperatureGraph.hoverBars, hoverDisplay, this.temperatureGraph.xScale, this.temperatureGraph.yScale);
       renderFourierBars(this.temperatureGraph.pinnedBars, pinnedDisplay, this.temperatureGraph.xScale, this.temperatureGraph.yScale);
+      this.highlightFourierBin(null);
     } else {
       this.temperatureGraph.hoverBars.selectAll('line').remove();
       this.temperatureGraph.pinnedBars.selectAll('line').remove();
@@ -965,39 +1015,54 @@ export class TemperatureViewer {
   }
 
   updateCurrentGraphPoint() {
+    const hasSecond = Boolean(this.state.pinnedPoint && this.state.hoverPoint && this.pinnedSeries && this.hoverSeries && !samePoint(this.state.pinnedPoint, this.state.hoverPoint));
     const readout = document.getElementById('selected-location');
     if (readout) {
-      const point = this.state.pinnedPoint;
-      readout.hidden = !point;
-      if (point) {
-        const value = this.pinnedSeries?.[this.state.displayFrameIndex]?.value;
+      const point = this.state.hoverPoint;
+      readout.hidden = !hasSecond || this.fourierMode;
+      if (hasSecond) {
+        const value = this.hoverSeries?.[this.state.displayFrameIndex]?.value;
         readout.textContent = `${formatLatLon(pixelToLatLon(point, this.state.width, this.state.height))} · ${Number.isFinite(value) ? `${formatTemperature(value)} °C` : 'No temperature data'}`;
       }
     }
     if (!this.temperatureGraph) {
       return;
     }
-    const activePoint = this.state.hoverPoint || this.state.pinnedPoint;
+    const activePoint = this.fourierMode ? this.state.hoverPoint || this.state.pinnedPoint : this.state.pinnedPoint || this.state.hoverPoint;
+    this.temperatureGraph.pinnedCurrentPoint.attr('display', 'none');
+    this.temperatureGraph.pinnedMaskPoint.attr('display', 'none');
     this.temperatureGraph.graphTitleLabel.text(
       activePoint
-        ? `${this.fourierMode ? 'Fourier' : 'Temperature'} at ${formatLatLon(pixelToLatLon(activePoint, this.state.width, this.state.height))}`
+        ? `${this.fourierMode ? 'Fourier at ' : ''}${formatLatLon(pixelToLatLon(activePoint, this.state.width, this.state.height))}`
         : `${this.fourierMode ? 'Fourier' : 'Temperature'} at --`
     );
     if (this.fourierMode) {
       const amplitudes = this.graphDisplaySeries();
-      const maxAmplitude = d3.max(amplitudes, (datum) => datum.value);
+      const maxAmplitude = d3.max(amplitudes.filter(datum => datum.index > 0), (datum) => datum.value);
       this.temperatureGraph.currentPoint.attr('r', 0);
       this.temperatureGraph.currentMaskPoint.attr('r', 0);
-      this.temperatureGraph.currentValueLabel.text(Number.isFinite(maxAmplitude) ? `Max ${formatTemperature(maxAmplitude)} °C` : 'Amplitude');
+      this.temperatureGraph.currentValueLabel.text(Number.isFinite(maxAmplitude) ? `Max ±${formatTemperature(maxAmplitude)} °C` : 'Amplitude °C');
       return;
     }
-    const series = this.hoverSeries || this.pinnedSeries;
+    const series = this.pinnedSeries || this.hoverSeries;
+    const pinnedValue = hasSecond ? this.hoverSeries?.[this.state.displayFrameIndex]?.value : NaN;
+    if (Number.isFinite(pinnedValue)) {
+      this.temperatureGraph.pinnedCurrentPoint
+        .attr('x', this.temperatureGraph.xScale(this.state.displayFrameIndex) - 4)
+        .attr('y', this.temperatureGraph.yScale(clamp(pinnedValue, DISPLAY_RANGE_MIN, DISPLAY_RANGE_MAX)) - 4)
+        .attr('display', null);
+      this.temperatureGraph.pinnedMaskPoint
+        .attr('x', this.temperatureGraph.xScale(this.state.displayFrameIndex) - 4)
+        .attr('y', this.temperatureGraph.yScale(clamp(pinnedValue, DISPLAY_RANGE_MIN, DISPLAY_RANGE_MAX)) - 4)
+        .attr('display', null);
+    }
     const datum = series ? series[this.state.displayFrameIndex] : null;
     const value = datum?.value;
+    this.temperatureGraph.currentValueLabel.text('');
+    this.temperatureGraph.graphTitleLabel.text(`${activePoint ? formatLatLon(pixelToLatLon(activePoint, this.state.width, this.state.height)) : '--'} · ${Number.isFinite(value) ? formatTemperature(value) : '--'} °C`);
     if (!Number.isFinite(value)) {
       this.temperatureGraph.currentPoint.attr('r', 0);
       this.temperatureGraph.currentMaskPoint.attr('r', 0);
-      this.temperatureGraph.currentValueLabel.text('-- °C');
       return;
     }
     const x = this.temperatureGraph.xScale(this.state.displayFrameIndex);
@@ -1010,7 +1075,6 @@ export class TemperatureViewer {
       .attr('cx', x)
       .attr('cy', y)
       .attr('r', 5);
-    this.temperatureGraph.currentValueLabel.text(`${formatTemperature(value)} °C`);
   }
 
   frameIndexFromGraphPointer(event) {
@@ -1174,7 +1238,7 @@ function formatAmplitudeTick(value) {
 function renderFourierBars(group, series, xScale, yScale) {
   const baseline = yScale(yScale.domain()[0]);
   group.selectAll('line')
-    .data(series)
+    .data(series.filter(datum => datum.index > 0 && Number.isFinite(datum.value)), datum => datum.index)
     .join('line')
     .attr('x1', (datum) => xScale(datum.index))
     .attr('x2', (datum) => xScale(datum.index))

@@ -35,9 +35,17 @@ function originalDFT(input) {
       const angle = -2 * Math.PI * f * i / n;
       real += filled[i] * Math.cos(angle); imaginary += filled[i] * Math.sin(angle);
     }
-    return Math.hypot(real, imaginary) * (f === 0 ? 1 / n : 2 / n);
+    return Math.hypot(real, imaginary) * (f === 0 || (n % 2 === 0 && f === n / 2) ? 1 / n : 2 / n);
   });
 }
+test('Fourier bins measure peak Celsius oscillation, including Nyquist', () => {
+  for (const n of [365, 366]) {
+    const amplitudes = fourierAmplitudes(Array.from({length: n}, (_, i) => 17 + 3 * Math.cos(2 * Math.PI * 2 * i / n)));
+    assert.ok(Math.abs(amplitudes[0] - 17) < 1e-10);
+    assert.ok(Math.abs(amplitudes[2] - 3) < 1e-10);
+  }
+  assert.ok(Math.abs(fourierAmplitudes([3, -3, 3, -3])[2] - 3) < 1e-10);
+});
 test('worker Fourier convention matches original for odd/even lengths and missing data', () => {
   for (const n of [0, 1, 2, 100, 365, 366]) {
     for (const data of [new Float32Array(n).fill(NaN), Float32Array.from({ length: n }, (_, i) => i % 13 ? 17 + 4 * Math.sin(i * .17) : NaN)]) {

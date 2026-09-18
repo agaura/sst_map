@@ -126,6 +126,10 @@
             <canvas id="graph-palette-canvas" class="graph-palette-canvas"></canvas>
           </div>
         </section>
+        <div class="analysis-readout">
+          <p id="fft-readout" hidden></p>
+          <output id="selected-location" class="selected-location" aria-label="Pinned location temperature" hidden></output>
+        </div>
       </div>
         <p class="analysis-empty"><span class="mouse-instruction">Hover over the map to inspect.<br>Click the map to pin a location.</span><span class="touch-instruction">Tap the flat map to pin a location.</span></p>
       </section>
@@ -154,7 +158,6 @@
         </div>
         <div class="timeline-summary">
           <div class="temperature-range" id="temperature-range" aria-live="polite"></div>
-          <output id="selected-location" class="selected-location" aria-label="Pinned location temperature" hidden></output>
         </div>
       </div>
       </div>

@@ -195,6 +195,7 @@ input[type="range"]::-moz-range-thumb { width: 8px; height: 14px; border: 0; bor
 
 .temperature-graph {
   position: relative;
+  cursor: pointer;
   width: 100%;
   flex: 0 0 100%;
   height: auto;
@@ -245,7 +246,7 @@ input[type="range"]::-moz-range-thumb { width: 8px; height: 14px; border: 0; bor
 }
 
 .temperature-graph text {
-  cursor: text;
+  cursor: pointer;
   pointer-events: auto;
   user-select: text;
   -webkit-user-select: text;
@@ -353,6 +354,25 @@ input[type="range"]::-moz-range-thumb { width: 8px; height: 14px; border: 0; bor
   stroke: var(--accent-strong);
 }
 
+.temperature-bars line.is-highlighted {
+  stroke: #fff;
+}
+#fft-readout { font: 10px/1.4 var(--mono); color: var(--fg); min-height: 28px; overflow-wrap: anywhere; }
+#fft-readout[hidden] { display: none; }
+.signal-analysis-content:has(.analysis-readout) { grid-template-rows: 32px minmax(0, 1fr) 30px; }
+.analysis-readout { min-height: 0; min-width: 0; height: 30px; }
+.analysis-readout:has(#fft-readout:not([hidden])) #selected-location { display: none; }
+#selected-location:not([hidden]) { display: flex; align-items: center; gap: 7px; }
+#selected-location::before { content: ''; width: 7px; height: 7px; flex: 0 0 7px; border: 1px solid currentColor; }
+
+/* Allocate room for readouts without taking it from the plot. */
+@media (min-width: 761px) and (orientation: landscape) {
+  .viewport { grid-template-rows: auto minmax(0, 1fr) clamp(182px, calc(25dvh + 22px), 262px); }
+}
+@media (orientation: portrait) and (min-width: 761px) {
+  .instrument-deck { grid-template-rows: 272px 180px; }
+}
+
 .temperature-current-point {
   fill: none;
   stroke: var(--fg);
@@ -390,7 +410,7 @@ input[type="range"]::-moz-range-thumb { width: 8px; height: 14px; border: 0; bor
   .cloud-panel { padding-top: 6px; gap: 5px; }
   .interaction-note { display: none; }
   .cloud-panel { grid-template-rows: auto minmax(0, 1fr); }
-  .viewport { gap: 8px; grid-template-rows: auto minmax(0, 1fr) 155px; }
+  .viewport { gap: 8px; grid-template-rows: auto minmax(0, 1fr) 177px; }
   .timeline-control { gap: 4px; }
   .strip-panel { padding-top: 6px; }
 }
@@ -564,7 +584,6 @@ input[type="range"]::-moz-range-thumb { width: 8px; height: 14px; border: 0; bor
   .map-stage { grid-row: 3; }
   .desktop-number { display: none; }
   .mobile-number { display: inline; }
-  #selected-location { display: none; }
   .projection-toggle { min-height: 32px; }
   .sidebar { grid-row: 6; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto auto; gap: 10px 14px; margin-top: 6px; border-top: 1px solid var(--border); padding-top: 8px; }
   .configuration-controls { grid-column: 1 / -1; grid-row: 1; gap: 2px; }
@@ -590,7 +609,7 @@ input[type="range"]::-moz-range-thumb { width: 8px; height: 14px; border: 0; bor
   #strip-canvas { height: 28px; }
   .instrument-deck { display: contents; }
   .instrument-deck::before { display: none; }
-  .analysis-panel { grid-column: 1; grid-row: 5; height: 210px; grid-template-rows: 32px minmax(0, 1fr); }
+  .analysis-panel { grid-column: 1; grid-row: 5; height: 252px; grid-template-rows: 32px minmax(0, 1fr); }
   .signal-analysis-content { grid-template-rows: 32px minmax(0, 1fr); }
   .timeline-control { grid-column: 1; grid-row: 4; border: 0; padding: 0; gap: 5px; grid-template-rows: 20px auto 72px auto; }
   .timeline-stage, #frame-timeline { touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
@@ -603,7 +622,7 @@ input[type="range"]::-moz-range-thumb { width: 8px; height: 14px; border: 0; bor
   .canvas-wrapper, .cloud-stage, .strip-panel, .instrument-deck, .configuration-controls, .viewport-header {
     -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
   }
-  .temperature-graph text { -webkit-user-select: none; user-select: none; cursor: default; }
+  .temperature-graph text { -webkit-user-select: none; user-select: none; cursor: pointer; }
   .colormap-control input[type="number"] { -webkit-user-select: text; user-select: text; -webkit-touch-callout: default; }
   .checkbox-box:not(.radio-box) input:checked::after { width: 4px; height: 7px; }
   .radio-box input:checked::after { top: 50%; left: 50%; transform: translate(-50%, -50%); }
