@@ -362,12 +362,24 @@ input[type="range"]::-moz-range-thumb { width: 8px; height: 14px; border: 0; bor
 .signal-analysis-content:has(.analysis-readout) { grid-template-rows: 32px minmax(0, 1fr) 30px; }
 .analysis-readout { min-height: 0; min-width: 0; height: 30px; }
 .analysis-readout:has(#fft-readout:not([hidden])) #selected-location { display: none; }
-#selected-location:not([hidden]) { display: flex; align-items: center; gap: 7px; }
-#selected-location::before { content: ''; width: 7px; height: 7px; flex: 0 0 7px; border: 1px solid currentColor; }
+#selected-location:not([hidden]) { display: flex; align-items: center; gap: 6px; }
+#selected-location::before {
+  content: ''; display: block; box-sizing: border-box;
+  width: 8px; height: 8px; flex: 0 0 8px;
+  border: 1.5px solid currentColor;
+}
+#selected-location svg { display: block; min-width: 0; flex: 1; overflow: visible; font: inherit; }
 
 /* Allocate room for readouts without taking it from the plot. */
 @media (min-width: 761px) and (orientation: landscape) {
   .viewport { grid-template-rows: auto minmax(0, 1fr) clamp(182px, calc(25dvh + 22px), 262px); }
+  /* Let the plot use the full analysis height; keep its controls above the axes. */
+  .signal-analysis-content:has(.analysis-readout) { display: block; position: relative; }
+  .signal-analysis-content[hidden] { display: none; }
+  .signal-analysis-content .graph-panel { position: absolute; inset: 0; }
+  .signal-analysis-content .graph-mode-toggle { position: absolute; top: 0; left: 0; height: 14px; z-index: 3; }
+  .signal-analysis-content .analysis-readout { position: absolute; top: 16px; left: 0; right: 0; height: 14px; z-index: 3; }
+  .analysis-readout #fft-readout, .analysis-readout #selected-location { min-height: 0; font-size: 8px; line-height: 14px; }
 }
 @media (orientation: portrait) and (min-width: 761px) {
   .instrument-deck { grid-template-rows: 272px 180px; }
@@ -389,6 +401,13 @@ input[type="range"]::-moz-range-thumb { width: 8px; height: 14px; border: 0; bor
 .temperature-graph.is-fourier .temperature-series--pinned, .temperature-bars--pinned line { stroke: var(--accent); }
 .graph-mode-toggle { margin: 0; }
 .temperature-graph-label, .temperature-graph-current-value { font-size: clamp(6px, 3cqw, 10px); }
+.temperature-graph-label { font-size: var(--graph-label-size, 10px); font-weight: 600; font-variant-numeric: tabular-nums; }
+.analysis-readout #selected-location, .analysis-readout #fft-readout {
+  margin-left: var(--graph-label-inset, 32px);
+  font: 600 var(--graph-label-size, 10px)/14px var(--mono);
+  letter-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
 .temperature-graph-axis text { font-size: clamp(6px, 2.8cqw, 9px); }
 @media (min-width: 1600px) { .timeline-hint { display: inline; } .frame-readout { flex: 1; } }
 @media (max-width: 1100px) {

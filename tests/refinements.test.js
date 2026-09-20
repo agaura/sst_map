@@ -11,6 +11,9 @@ test('plot boundaries align with timeline without stretching the SVG', () => {
   assert.equal(layout.width, 280); assert.equal(layout.height, 180);
   assert.equal(rect.top + layout.margin.top, 522);
   assert.equal(rect.bottom - layout.margin.bottom, 660);
+  const nearBottom = graphLayout(rect, { left: 300, top: 545, bottom: 671, height: 126 });
+  assert.equal(rect.top + nearBottom.margin.top, 545);
+  assert.equal(rect.bottom - nearBottom.margin.bottom, 671);
   const narrow = graphLayout({ width: 180, height: 50, right: 180, top: 500, bottom: 550 }, { left: 0, top: 570, bottom: 600, height: 30 });
   assert(narrow.margin.top + narrow.margin.bottom < narrow.height);
 });

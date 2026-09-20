@@ -5,7 +5,7 @@ export function graphLayout(rect, timeline) {
   const besideTimeline = rect.width > 0 && timeline?.height > 0 && rect.right <= timeline.left;
   if (besideTimeline) {
     const top = timeline.top - rect.top, bottom = rect.bottom - timeline.bottom;
-    if (top >= 12 && bottom >= 12 && top + bottom < height - 12) {
+    if (top >= 12 && bottom >= 0 && top + bottom < height - 12) {
       margin.top = top; margin.bottom = bottom;
     }
   }

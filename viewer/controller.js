@@ -496,6 +496,12 @@ export class TemperatureViewer {
     const { width: graphWidth, height: graphHeight, margin: graphMargin } = graphLayout(
       temperatureGraph.getBoundingClientRect(), this.elements.frameTimeline.getBoundingClientRect(),
     );
+    const analysisContent = temperatureGraph.closest('.signal-analysis-content');
+    if (analysisContent) {
+      const graphOffset = temperatureGraph.getBoundingClientRect().left - analysisContent.getBoundingClientRect().left;
+      analysisContent.style.setProperty('--graph-label-size', `${Math.min(10, Math.max(6, graphWidth * 0.03))}px`);
+      analysisContent.style.setProperty('--graph-label-inset', `${graphOffset + graphMargin.left + 8}px`);
+    }
     const palette = this.elements.graphPaletteCanvas;
     if (palette) {
       palette.style.left = `${(graphMargin.left - GRAPH_REVEAL_BLEED_X) / graphWidth * 100}%`;
@@ -605,6 +611,9 @@ export class TemperatureViewer {
       .call(d3.axisBottom(xScale)
         .tickValues(xTicks)
         .tickFormat((index) => this.fourierMode ? `${Math.round(index)}` : monthLabel(index)));
+    if (graphMargin.bottom < 18) {
+      overlayLayer.selectAll('.temperature-graph-axis--x text').attr('y', -6).attr('dy', '0');
+    }
     overlayLayer.append('g')
       .attr('class', 'temperature-graph-axis temperature-graph-axis--y')
       .attr('transform', `translate(${graphMargin.left},0)`)
@@ -613,11 +622,12 @@ export class TemperatureViewer {
         .tickFormat((value) => this.fourierMode ? `${formatAmplitudeTick(value)}°` : `${value}`));
     const graphTitleLabel = overlayLayer.append('text')
       .attr('class', 'temperature-graph-label')
-      .attr('x', graphMargin.left)
-      .attr('y', Math.max(6, graphMargin.top - 8))
+      .attr('x', graphMargin.left + (this.fourierMode ? 8 : 22))
+      .attr('y', Math.max(6, graphMargin.top - 8) - 3)
+      .attr('dominant-baseline', 'central')
       .text(this.fourierMode ? 'Fourier at --' : 'Temperature at --');
     const titleMarker = overlayLayer.append('circle').attr('class', 'temperature-current-point')
-      .attr('cx', graphMargin.left - 10).attr('cy', Math.max(6, graphMargin.top - 8) - 3).attr('r', 3)
+      .attr('cx', graphMargin.left + 12).attr('cy', Math.max(6, graphMargin.top - 8) - 3).attr('r', 3.25)
       .attr('display', this.fourierMode ? 'none' : null);
     const currentValueLabel = overlayLayer.append('text')
       .attr('class', 'temperature-graph-current-value')
@@ -935,7 +945,7 @@ export class TemperatureViewer {
     if (!this.temperatureGraph) {
       return;
     }
-    setPointCircle(this.temperatureGraph.hoverCircle, this.state.hoverPoint);
+    setPointCircle(this.temperatureGraph.hoverCircle, this.state.hoverPoint, Boolean(this.state.pinnedPoint));
     setPointCircle(this.temperatureGraph.pinnedCircle, this.state.pinnedPoint);
   }
 
@@ -976,7 +986,7 @@ export class TemperatureViewer {
     }
     d3.select(selected).classed('is-highlighted', true).raise();
     const cycles = bin * 365 / this.state.frameCount;
-    readout.textContent = `±${selected.__data__.value.toFixed(2)} °C variation · ${Number(cycles.toFixed(2))} cycles/year (${(this.state.frameCount / bin).toFixed(1)} days)`;
+    readout.textContent = `±${selected.__data__.value.toFixed(2)} °C · ${Number(cycles.toFixed(2))}/yr · ${(this.state.frameCount / bin).toFixed(1)} days`;
   }
 
   graphDisplaySeries(rawSeries = this.hoverSeries || this.pinnedSeries) {
@@ -1022,7 +1032,13 @@ export class TemperatureViewer {
       readout.hidden = !hasSecond || this.fourierMode;
       if (hasSecond) {
         const value = this.hoverSeries?.[this.state.displayFrameIndex]?.value;
-        readout.textContent = `${formatLatLon(pixelToLatLon(point, this.state.width, this.state.height))} · ${Number.isFinite(value) ? `${formatTemperature(value)} °C` : 'No temperature data'}`;
+        const label = `${formatLatLon(pixelToLatLon(point, this.state.width, this.state.height))} · ${Number.isFinite(value) ? `${formatTemperature(value)} °C` : 'No temperature data'}`;
+        const labelSvg = d3.select(readout).selectAll('svg').data([null]).join('svg')
+          .attr('width', '100%').attr('height', 14).attr('aria-hidden', 'true');
+        labelSvg.selectAll('text').data([label]).join('text')
+          .attr('x', 0).attr('y', 7).attr('dominant-baseline', 'central')
+          .attr('fill', 'currentColor').text(label);
+        readout.setAttribute('aria-label', `Hovered location: ${label}`);
       }
     }
     if (!this.temperatureGraph) {
@@ -1266,10 +1282,18 @@ function createPointMarker(overlay, className) {
   const marker = overlay.append('g').attr('class', `point-marker ${className}`);
   marker.append('circle').attr('class', 'point-marker-ring point-marker-ring--black').attr('r', 8);
   marker.append('circle').attr('class', 'point-marker-ring point-marker-ring--white').attr('r', 8);
+  const squareSide = 8 * Math.sqrt(Math.PI);
+  for (const color of ['black', 'white']) {
+    marker.append('rect').attr('class', `point-marker-ring point-marker-ring--${color}`)
+      .attr('x', -squareSide / 2).attr('y', -squareSide / 2).attr('width', squareSide).attr('height', squareSide)
+      .attr('display', 'none');
+  }
   return marker;
 }
 
-function setPointCircle(marker, point) {
+function setPointCircle(marker, point, square = false) {
+  marker.selectAll('circle').attr('display', square ? 'none' : null);
+  marker.selectAll('rect').attr('display', square ? null : 'none');
   marker
     .classed('is-visible', Boolean(point))
     .attr('transform', point ? `translate(${point.x + 0.5},${point.y + 0.5})` : 'translate(0,0)');
